@@ -1,0 +1,17 @@
+{
+  "teamspace": "REPLACE_OWNER/REPLACE_TEAMSPACE",
+  "worker_studio": "REPLACE_WORKER_STUDIO",
+  "worker_repo": "/teamspace/studios/this_studio/ML_Code_3",
+  "input": "s3://REPLACE_BUCKET/REPLACE_DATASET.zip",
+  "work": "/teamspace/studios/this_studio/work_ml3",
+  "cpu_machine": "DATA_PREP",
+  "gpu_machine": "A100_40GB",
+  "embedding_machine": "A100_40GB",
+  "embedding_gpus": 1,
+  "cpu_rate_usd": 1.48,
+  "gpu_rate_usd": 2.19,
+  "embedding_rate_usd": 2.19,
+  "max_compute_usd": 35.0,
+  "max_hours": 12,
+  "phase_hours": {"prepare": 3, "train": 2, "embed": 3, "finish": 4}
+}

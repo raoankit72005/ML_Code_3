@@ -1,0 +1,16 @@
+{
+  "hash_bits": 18,
+  "validation_fraction": 0.2,
+  "seed": 42,
+  "block_limit": 60,
+  "lexical_pool": 80,
+  "lexical_top_k": 20,
+  "max_candidates": 64,
+  "query_terms": 16,
+  "row_group_size": 5000,
+  "sqlite_cache_mb": 64,
+  "progress_every": 10000,
+  "india_retrieval_multiplier": 1,
+  "word_retrieval": 1,
+  "diverse_candidates": 8
+}
