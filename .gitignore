@@ -53,3 +53,4 @@ logs/
 launch_state*
 configs/active_model.json
 configs/local*.json
+controller_state/

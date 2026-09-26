@@ -20,6 +20,9 @@ def main():
     target=work/f'{a.team}_submission.zip';partial=target.with_suffix('.partial')
     with zipfile.ZipFile(partial,'w',zipfile.ZIP_DEFLATED) as z:
         for name in ('matching_results.tsv','candidate_pairs.tsv'):z.write(work/'output'/name,'output/'+name)
+        for name in ('run_report.json',):
+            z.write(work/'output'/name,'output/'+name)
+        z.write(work/'environment.json','code/business_entity_resolution/environment-used.json')
         for name in files:
             path=ROOT/name
             if path.is_file() and not path.is_symlink():z.write(path,'code/business_entity_resolution/'+name)
