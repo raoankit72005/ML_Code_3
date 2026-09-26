@@ -32,8 +32,7 @@ In the worker terminal:
 ```bash
 git clone https://github.com/raoankit72005/ML_Code_3.git
 cd ML_Code_3
-# If these changes are still in a PR, check out that PR branch on BOTH Studios.
-git checkout codex/lightning-autoswitch-ready
+git checkout main
 bash scripts/setup_lightning.sh
 ```
 
@@ -55,7 +54,7 @@ In a different CPU Studio:
 ```bash
 git clone https://github.com/raoankit72005/ML_Code_3.git
 cd ML_Code_3
-git checkout codex/lightning-autoswitch-ready
+git checkout main
 python -m pip install lightning-sdk==2026.9.18
 lightning login
 ```
