@@ -1,5 +1,33 @@
 # Verification record
 
+## Automatic-switching update — 2026-09-26
+
+- Current regression suite: 38 distinct tests passed, one real-CUDA test skipped.
+  This is a 38-test discovery run (37 pass / 1 skip) plus the separately run new
+  shutdown-failure recovery regression (1 pass).
+- Added checks for invalid machine/GPU combinations before any Studio access, plan/status
+  without cloud calls, idempotent shutdown, provider/guard shutdown races, shutdown failure
+  with retained active state, source mismatch, controller-on-worker refusal, lock release,
+  cumulative budget extension/resume, persistent input paths, and private config generation.
+- The uploaded er_sample.zip completed all 21 stages through pipeline.py using the offline
+  tiny random encoder and real LoRA, FAISS and CPU LightGBM. Restart skipped every stage.
+- Original sample counts: 500 train S1, 1,384 train S2, 1,437 train S3; 300 test S1,
+  300 test S2, 300 test S3. Test S1 has 100 each from France, India and the US.
+- Official validator with --check-ids: PASS. Both TSVs have exactly 300 original test S1 rows.
+  run_report.json contains the dataset, candidate-recall, validation, model and coverage reports.
+- Syntax compilation and git diff whitespace checks passed.
+- Lightning SDK 2026.9.18 start/stop and Machine metadata were inspected locally.
+  stop() raises on an already stopped worker; the controller now handles this and confirms
+  stopped state before starting the next phase.
+- No paid Studios were started. Real account capacity, production pretrained-model accuracy,
+  A100/two-GPU execution, provisioning/shutdown and billing remain unverified. These tests
+  do not establish full-dataset runtime, leaderboard quality or a cost guarantee.
+
+The launch configuration now defaults to one A100 for training and two for embeddings.
+Use docs/LIGHTNING_QUICKSTART.md for the setup generator, sample/full separation and resume.
+
+## Earlier verification record
+
 ## Executed locally
 
 - Installed the pinned requirements-lightning.txt environment; `pip check` found no broken requirements.

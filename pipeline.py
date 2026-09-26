@@ -59,6 +59,11 @@ def execute(stage,args,source,cfg,prep,training):
         # Download pinned weights and test adapter targets before renting GPUs.
         model=encoder.load(dict(cfg,device='cpu'),adapters=True)
         model.encode(['name: setup | address: example | country: FR'],normalize_embeddings=True)
+        parameters=sum(p.numel() for p in model.parameters())
+        if parameters>8_000_000_000:raise ValueError('Encoder exceeds challenge 8B parameter limit')
+        from er_pipeline.common import dump_json
+        from er_pipeline.run_report import environment
+        dump_json(work/'environment.json',dict(environment(),encoder_parameters=parameters))
     elif stage=='clean':fast_clean.clean(source,cleaned,prep['workers'])
     elif stage=='clusters':clusters.build(work/'train/index.sqlite',find_truth(cleaned),work/'clusters.sqlite',prep['validation_fraction'],cfg['seed'])
     elif stage=='encoder':encoder.train(work,cfg)
@@ -85,6 +90,8 @@ def execute(stage,args,source,cfg,prep,training):
             '--candidate',str(work/'test/candidate_pairs.tsv'),'--test-dir',str(testdir),'--check-ids'],check=True)
         output=work/('sample_output' if args.sample else 'output');output.mkdir(exist_ok=True)
         for name in ('matching_results.tsv','candidate_pairs.tsv'):shutil.copyfile(work/'test'/name,output/name)
+        from er_pipeline.run_report import build
+        build(work,args.sample)
         if args.sample:(output/'SAMPLE_ONLY.txt').write_text('TEST RUN ONLY. Do not submit sample predictions.\n')
         print(f'Validated output: {output}',flush=True)
     else:
@@ -121,6 +128,11 @@ def main():
     if not training['full_data']:raise ValueError('No implicit sampling of matcher training')
     if args.stage:
         # Internal subprocess: parent owns lock, signature and completion state.
+        if cfg['device']=='cuda' and args.stage in ('encoder','train-embed','test-embed'):
+            import torch
+            needed=cfg['embedding_gpus'] if args.stage.endswith('-embed') else 1
+            if not torch.cuda.is_available() or torch.cuda.device_count()<needed:
+                raise RuntimeError(f'{args.stage} needs {needed} visible CUDA GPU(s). Check the selected Lightning machine and PyTorch installation.')
         execute(args.stage,args,Path(args.input),cfg,prep,training);return
     lock=(args.work/'.pipeline.lock').open('w')
     try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)

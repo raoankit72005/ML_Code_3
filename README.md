@@ -5,6 +5,12 @@ Keeps **LoRA fine-tuning + multilingual embeddings + FAISS + lexical retrieval +
 New entry point: **pipeline.py**. Automatic machine controller: **lightning_run.py**.
 Do not use the legacy `hybrid.py` or Colab launcher for the automatic workflow.
 
+**Start here: [Lightning AI setup and automatic switching](docs/LIGHTNING_QUICKSTART.md).**
+The configuration generator creates separate sample/full run settings. The controller validates
+all machine choices before starting, confirms shutdown between phases, and resumes with retained
+checkpoints and accounting. Default: one A100 for fine-tuning, **two A100s for embeddings**.
+`--status` reads local progress without cloud calls; `--plan` never rents compute.
+
 **No error-free, 12-hour or ₹4,000 guarantee.** The supplied summary has 24,229,173 total
 train+test source records (not 12M). That means ~37.2 GB of float16 768-D vectors alone,
 plus indexes, raw/clean data, pair tables and LightGBM staging. Up to 252,119,360 candidate
@@ -15,10 +21,10 @@ GB may be needed); monitor actual free space. The sample is inspection-only, not
 
 A controller on a **separate CPU Studio** starts/stops a dedicated **worker Studio**:
 
-1. CPU (`DATA_PREP`, screenshot: 32 cores/128 GB, $1.48/hr): input staging, checks,
+1. CPU (`DATA_PREP`, configured estimate $1.48/hr): input staging, checks,
    parallel file cleaning, train/test indexes and cluster split.
 2. One A100 40 GB ($2.19/hr): LoRA fine-tuning, one epoch by default.
-3. One A100 by default; optionally two ($4.38/hr TOTAL): embeddings.
+3. Two A100s by default (configured estimate $4.38/hr TOTAL): embeddings.
 4. CPU: multithreaded FAISS, parallel candidate blocking and bulk feature extraction,
    full-data LightGBM, validation, test inference and official output validation.
 5. Worker is stopped on completion or error; files stay in its persistent storage.
@@ -81,9 +87,11 @@ Edit `configs/local_launch.json`:
   accounting for INR conversion, taxes, setup, storage, transfers and controller charges.
 - `max_hours` and `phase_hours`: time limits, NOT runtime promises. Defaults sum to 12h,
   but startup/release overhead reduces executable time. A long phase times out and retains
-  checkpoints; it does not silently reduce data, skip fine-tuning or declare success.
+  checkpoints; it does not silently reduce data, skip fine-tuning or declare success. Limits are
+  cumulative worker time across attempts, including provisioning/shutdown. Cleanly stopped time
+  between attempts is excluded. Increase these three limits in place to resume an exhausted run.
 
-For two-GPU embeddings set all three together:
+Two-GPU embeddings are configured together (use one GPU by changing all three values):
 
 ```json
 "embedding_machine": "A100_40GB_X_2",
@@ -115,12 +123,13 @@ tail -f controller.log
 
 Monitor worker logs at `<work>/logs/prepare.log`, `train.log`, `embed.log`, `finish.log`.
 Encoder JSONL and TensorBoard are under `<work>/logs/`. Each completed stage is recorded in
-`pipeline_manifest.json`. The controller records phase state in local `launch_state.json`.
+`pipeline_manifest.json`. The controller prints its state path under `controller_state/` (or use
+an explicit `--state`). Keep that state file for resume and accumulated estimated charges.
 After a failure, fix the environment/capacity issue and rerun the same command. Completed phases
 and stages are skipped; encoder resumes a checkpoint; embedding shards resume durable cursors.
 Blocking/features restart their unfinished stage. Never run two controllers on the same worker.
 
-The controller stops compute in `finally`, polls time/estimated charges and the remote guard
+The controller confirms stopped status in `finally`, polls time/estimated charges and the remote guard
 kills overlong commands. The guard attempts an independent stop on timeout. These are
 **best-effort controls, NOT a provider-enforced billing cap**. API outages, controller termination,
 price differences and storage costs can exceed estimates. If stop fails, use Lightning's UI.
@@ -133,6 +142,7 @@ After official validation passes, full-data files are in the worker:
 ```
 <work>/output/matching_results.tsv
 <work>/output/candidate_pairs.tsv
+<work>/output/run_report.json
 ```
 
 Upload **matching_results.tsv** to the leaderboard. Both files retain every test S1, including

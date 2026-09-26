@@ -16,8 +16,8 @@ import lightning_run
 class FakeWorker:
     id='separate-worker';status='Stopped'
     def __init__(self,fail=False):self.started=[];self.stopped=0;self.fail=fail
-    def start(self,**kwargs):self.started.append(str(kwargs['machine']))
-    def stop(self):self.stopped+=1
+    def start(self,**kwargs):self.started.append(str(kwargs['machine']));self.status='Running'
+    def stop(self):self.stopped+=1;self.status='Stopped'
     def run(self,command):
         if 'rev-parse' in command:return 'abc123'
         if 'p.read_text' in command:return json.dumps({'exit_code':1 if self.fail else 0})
@@ -39,7 +39,7 @@ class LightningTests(unittest.TestCase):
     def test_phase_order_stop_and_resume(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);worker=FakeWorker();self.invoke(root,worker)
-            self.assertEqual(worker.started,['DATA_PREP','A100_40GB','A100_40GB','DATA_PREP'])
+            self.assertEqual(worker.started,['DATA_PREP','A100_40GB','A100_40GB_X_2','DATA_PREP'])
             self.assertEqual(worker.stopped,4)
             self.invoke(root,worker);self.assertEqual(len(worker.started),4)
             self.assertEqual(json.loads((root/'state.json').read_text())['completed'],lightning_run.PHASES)
